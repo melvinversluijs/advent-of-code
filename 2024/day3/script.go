@@ -20,27 +20,49 @@ func main() {
 		return
 	}
 
-	sumOfMultiplications := calculateSumOfMultiplications(dataSet)
+	sumOfMultiplications, sumOfMultiplicationsWithInstructions := calculateSumOfMultiplications(dataSet)
 	fmt.Println("Sum of multiplications:", sumOfMultiplications)
+	fmt.Println("Sum of multiplications with instructions:", sumOfMultiplicationsWithInstructions)
 }
 
-func calculateSumOfMultiplications(dataSet []byte) int {
+func calculateSumOfMultiplications(dataSet []byte) (int, int) {
 	var total int = 0
+	var totalWithInstructions int = 0
 
-	pattern := regexp.MustCompile(`mul\((\d+,\d+)\)`)
+	// Retrieve the multiplications and instructions in 3 capture groups.
+	// First is: numbers, seperated by comma
+	// Second is: do
+	// Third is: dont't
+	pattern := regexp.MustCompile(`mul\((\d+,\d+)\)|(do)\(\)|(don't)\(\)`)
 	matches := pattern.FindAllSubmatch(dataSet, -1)
 
+	enabled := true
 	for _, match := range matches {
-		if len(match) < 1 {
+		numbersString := string(match[1]) // First capture group
+		doString := string(match[2])      // Second capture group
+		dontString := string(match[3])    // Third capture group
+
+		if doString == "do" {
+			enabled = true
 			continue
 		}
 
-		numbers := strings.Split(string(match[1]), ",")
+		if dontString == "don't" {
+			enabled = false
+			continue
+		}
 
-		total += multiplyNumbersInStringSlice(numbers)
+		numbers := strings.Split(string(numbersString), ",")
+
+		multiplication := multiplyNumbersInStringSlice(numbers)
+		total += multiplication
+
+		if enabled {
+			totalWithInstructions += multiplication
+		}
 	}
 
-	return total
+	return total, totalWithInstructions
 }
 
 func multiplyNumbersInStringSlice(numbersAsString []string) int {
