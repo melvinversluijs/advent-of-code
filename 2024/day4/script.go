@@ -19,12 +19,15 @@ func main() {
 	}
 
 	dataSet := strings.TrimSpace(string(dataSetInBytes[:]))
-	total := calculateMatchCount(dataSet)
 
-	fmt.Println("Total amount of matches:", total)
+	totalXmasMatches := calculateXmasMatchCount(dataSet)
+	fmt.Println("Total amount XMAS matches:", totalXmasMatches)
+
+	totalCrossMasMatches := calculateCrossMasMatches(dataSet)
+	fmt.Println("Total amount of X-MAS matches:", totalCrossMasMatches)
 }
 
-func calculateMatchCount(dataSet string) int {
+func calculateXmasMatchCount(dataSet string) int {
 	total := 0
 	rows := strings.Split(dataSet, "\n")
 	maxY := len(rows)
@@ -41,42 +44,42 @@ func calculateMatchCount(dataSet string) int {
 			}
 
 			// Right
-			if canGoRight(x, maxX) && rows[y][x:x+4] == "XMAS" {
+			if canGoRight(x, maxX, 3) && rows[y][x:x+4] == "XMAS" {
 				total++
 			}
 
 			// Left
-			if canGoLeft(x) && rows[y][x-3:x+1] == "SAMX" {
+			if canGoLeft(x, 3) && rows[y][x-3:x+1] == "SAMX" {
 				total++
 			}
 
 			// Down
-			if canGoDown(y, maxY) && isM(rows[y+1][x]) && isA(rows[y+2][x]) && isS(rows[y+3][x]) {
+			if canGoDown(y, maxY, 3) && isM(rows[y+1][x]) && isA(rows[y+2][x]) && isS(rows[y+3][x]) {
 				total++
 			}
 
 			// Up
-			if canGoUp(y) && isM(rows[y-1][x]) && isA(rows[y-2][x]) && isS(rows[y-3][x]) {
+			if canGoUp(y, 3) && isM(rows[y-1][x]) && isA(rows[y-2][x]) && isS(rows[y-3][x]) {
 				total++
 			}
 
 			// Diagonal up / right
-			if canGoUp(y) && canGoRight(x, maxX) && isM(rows[y-1][x+1]) && isA(rows[y-2][x+2]) && isS(rows[y-3][x+3]) {
+			if canGoUp(y, 3) && canGoRight(x, maxX, 3) && isM(rows[y-1][x+1]) && isA(rows[y-2][x+2]) && isS(rows[y-3][x+3]) {
 				total++
 			}
 
 			// Diagonal up / left
-			if canGoUp(y) && canGoLeft(x) && isM(rows[y-1][x-1]) && isA(rows[y-2][x-2]) && isS(rows[y-3][x-3]) {
+			if canGoUp(y, 3) && canGoLeft(x, 3) && isM(rows[y-1][x-1]) && isA(rows[y-2][x-2]) && isS(rows[y-3][x-3]) {
 				total++
 			}
 
 			// Diagonal down / right
-			if canGoDown(y, maxY) && canGoRight(x, maxX) && isM(rows[y+1][x+1]) && isA(rows[y+2][x+2]) && isS(rows[y+3][x+3]) {
+			if canGoDown(y, maxY, 3) && canGoRight(x, maxX, 3) && isM(rows[y+1][x+1]) && isA(rows[y+2][x+2]) && isS(rows[y+3][x+3]) {
 				total++
 			}
 
 			// Diagonal down / left
-			if canGoDown(y, maxY) && canGoLeft(x) && isM(rows[y+1][x-1]) && isA(rows[y+2][x-2]) && isS(rows[y+3][x-3]) {
+			if canGoDown(y, maxY, 3) && canGoLeft(x, 3) && isM(rows[y+1][x-1]) && isA(rows[y+2][x-2]) && isS(rows[y+3][x-3]) {
 				total++
 			}
 		}
@@ -85,20 +88,74 @@ func calculateMatchCount(dataSet string) int {
 	return total
 }
 
-func canGoRight(x int, maxX int) bool {
-	return x+3 < maxX
+func calculateCrossMasMatches(dataSet string) int {
+	total := 0
+	rows := strings.Split(dataSet, "\n")
+	maxY := len(rows)
+
+	// Loop vertically
+	for y := 0; y < maxY; y++ {
+		maxX := len(rows[y])
+
+		// Loop horizontally
+		for x := 0; x < maxX; x++ {
+			// Start finding matches from starting point A
+			if !isA(rows[y][x]) {
+				continue
+			}
+
+			// Make sure there is room available 1 spot around the starting point, since we need a cross.
+			if !canGoUp(y, 1) || !canGoDown(y, maxY, 1) || !canGoRight(x, maxX, 1) || !canGoLeft(x, 1) {
+				continue
+			}
+
+			// M.S
+			// .A.
+			// M.S
+			if isM(rows[y-1][x-1]) && isS(rows[y+1][x+1]) && isM(rows[y+1][x-1]) && isS(rows[y-1][x+1]) {
+				total++
+			}
+
+			// S.S
+			// .A.
+			// M.M
+			if isS(rows[y-1][x-1]) && isM(rows[y+1][x+1]) && isM(rows[y+1][x-1]) && isS(rows[y-1][x+1]) {
+				total++
+			}
+
+			// M.M
+			// .A.
+			// S.S
+			if isM(rows[y-1][x-1]) && isS(rows[y+1][x+1]) && isS(rows[y+1][x-1]) && isM(rows[y-1][x+1]) {
+				total++
+			}
+
+			// S.M
+			// .A.
+			// S.M
+			if isS(rows[y-1][x-1]) && isM(rows[y+1][x+1]) && isS(rows[y+1][x-1]) && isM(rows[y-1][x+1]) {
+				total++
+			}
+		}
+	}
+
+	return total
 }
 
-func canGoLeft(x int) bool {
-	return x-3 >= 0
+func canGoRight(x int, maxX int, distance int) bool {
+	return x+distance < maxX
 }
 
-func canGoDown(y int, maxY int) bool {
-	return y+3 < maxY
+func canGoLeft(x int, distance int) bool {
+	return x-distance >= 0
 }
 
-func canGoUp(y int) bool {
-	return y-3 >= 0
+func canGoDown(y int, maxY int, distance int) bool {
+	return y+distance < maxY
+}
+
+func canGoUp(y int, distance int) bool {
+	return y-distance >= 0
 }
 
 func isX(b byte) bool {
